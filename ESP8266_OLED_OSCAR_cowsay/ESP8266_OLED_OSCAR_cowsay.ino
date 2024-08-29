@@ -17,7 +17,7 @@ String msg = "Test with ESP8266";
 
 
 
-String extractToken(String payload) {
+String getToken(String payload) {
   String browser[] = {"token\":\"", "\",\"file_stage_in\""};
   int pos[2];
   int k = -1;
@@ -46,7 +46,7 @@ String extractToken(String payload) {
 }
 
 
-void executeService(WiFiClient& client, String serverUrl, String service,String token, String msg, String& response, int& httpResponseCode) {
+void runService(WiFiClient& client, String serverUrl, String service,String token, String msg, String& response, int& httpResponseCode) {
     HTTPClient http;
     String runService = String(serverUrl) + "/run/" + String(service);
     http.begin(client, runService);
@@ -81,7 +81,7 @@ void executeService(WiFiClient& client, String serverUrl, String service,String 
     http.end();
 }
 
-void getServiceResponse(WiFiClient& client, String serverUrl, String service, String user, String pass, String& payload, int& httpCode) {
+void readService(WiFiClient& client, String serverUrl, String service, String user, String pass, String& payload, int& httpCode) {
     HTTPClient http;
     String invokeService = String(serverUrl) + "/system/services/" + String(service);
     
@@ -128,12 +128,12 @@ void setup() {
     int httpCode;
       WiFiClient client;
     // Llamar a la función para obtener la respuesta del servicio
-       getServiceResponse(client, serverUrl, service, user, pass, serviceData, httpCode);
+       readService(client, serverUrl, service, user, pass, serviceData, httpCode);
        Serial.println("HTTP Code: " + String(httpCode));
         Serial.println("Response: " + serviceData);
 
     if (httpCode==200){
-        String token =extractToken(serviceData);
+        String token =getToken(serviceData);
       if (token=="") {
         Serial.println("Error in connection");
       } 
@@ -145,7 +145,7 @@ void setup() {
         int httpResponseCode;
 
     // Llamar a la función para ejecutar el servicio
-        executeService(client, serverUrl, service, token, msg, response, httpResponseCode);
+        runService(client, serverUrl, service, token, msg, response, httpResponseCode);
 
     // Imprimir la respuesta y el código HTTP
         Serial.println("HTTP Response Code: " + String(httpResponseCode));
