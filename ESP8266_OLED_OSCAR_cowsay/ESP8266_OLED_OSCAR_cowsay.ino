@@ -1,3 +1,6 @@
+#include <ArduinoJson.h>
+#include <ArduinoJson.hpp>
+
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
@@ -46,7 +49,7 @@ String getToken(String payload) {
 }
 
 
-void runService(WiFiClient& client, String serverUrl, String service,String token, String msg, String& response, int& httpResponseCode) {
+void runService(WiFiClient& client, String serverUrl, String service,String token, String data, String& response, int& httpResponseCode) {
     HTTPClient http;
     String runService = String(serverUrl) + "/run/" + String(service);
     http.begin(client, runService);
@@ -56,8 +59,8 @@ void runService(WiFiClient& client, String serverUrl, String service,String toke
     http.addHeader("Authorization", "Bearer " + token);
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    // Configurar datos
-    String data = "{\"message\": \"" + msg + "\"}";
+  
+    
 
     // Enviar la solicitud POST
     Serial.println("Execute service");
@@ -132,10 +135,23 @@ void setup() {
        Serial.println("HTTP Code: " + String(httpCode));
         Serial.println("Response: " + serviceData);
 
+       DynamicJsonDocument doc(4096);  // Tamaño inicial, ajusta según la complejidad del JSON
+
     if (httpCode==200){
-        String token =getToken(serviceData);
+        // Deserializar el JSON
+      DeserializationError error = deserializeJson(doc, serviceData);
+
+      if (error) {
+        Serial.print(F("Error al deserializar JSON: "));
+        Serial.println(error.c_str());
+        return;
+      }
+
+    // Acceder a algunos atributos del JSON
+      String token = doc["token"].as<String>();
       if (token=="") {
         Serial.println("Error in connection");
+        return;
       } 
       else {
         //String token = payload.substring(pos[0] + 8, pos[1]);
@@ -143,9 +159,11 @@ void setup() {
 
         String response;
         int httpResponseCode;
+        // Definicion del dato de entrada
+        String data = "{\"message\": \"" + msg + "\"}";
 
     // Llamar a la función para ejecutar el servicio
-        runService(client, serverUrl, service, token, msg, response, httpResponseCode);
+        runService(client, serverUrl, service, token, data, response, httpResponseCode);
 
     // Imprimir la respuesta y el código HTTP
         Serial.println("HTTP Response Code: " + String(httpResponseCode));
